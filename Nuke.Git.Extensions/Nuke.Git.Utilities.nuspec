@@ -1,0 +1,30 @@
+﻿<package>
+  <metadata>
+    <id>Nuke.Git.Utilities</id>
+    <title>Nuke.Git.Utilities</title>
+    <version>0.1</version>
+    <authors>Joris Visser</authors>
+    <owners>Joris Visser</owners>
+    <description>Extension on Nuke Build to handle git baseline and commits, based on the Cake GitPackager</description>
+    <licenseUrl>https://github.com/ilich/Nuke.Git.Utilities/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/ilich/Nuke.Git.Utilities</projectUrl>
+    <iconUrl>https://cdn.rawgit.com/cake-contrib/graphics/a5cf0f881c390650144b2243ae551d5b9f836196/png/cake-contrib-medium.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright © 2019 Joris Visser</copyright>
+    <tags>Cake Git Deployment</tags>
+  </metadata>
+  <files>
+    <file src="Nuke.Git.Utilities/bin/Release/Nuke.Git.Utilities.dll" target="lib/net461" />
+    <file src="Nuke.Git.Utilities/bin/Release/Nuke.Git.Utilities.dll.config" target="lib/net461" />
+    <file src="Nuke.Git.Utilities/bin/Release/Nuke.Git.Utilities.pdb" target="lib/net461" />
+    <file src="Nuke.Git.Utilities/bin/Release/LibGit2Sharp.dll" target="lib/net461" />
+    <file src="Nuke.Git.Utilities/bin/Release/LibGit2Sharp.dll.config" target="lib/net461" />
+    <file src="Nuke.Git.Utilities/bin/Release/LibGit2Sharp.pdb" target="lib/net461" />
+    <file src="Nuke.Git.Utilities/bin/Release/lib/linux/x86_64/libgit2-6311e88.so" target="lib/netstandard2.0/lib/linux/x86_64" />
+    <file src="Nuke.Git.Utilities/bin/Release/lib/osx/libgit2-6311e88.dylib" target="lib/netstandard2.0/lib/osx" />
+    <file src="Nuke.Git.Utilities/bin/Release/lib/win32/x64/git2-6311e88.dll" target="lib/netstandard2.0/lib/win32/x64" />
+    <file src="Nuke.Git.Utilities/bin/Release/lib/win32/x64/git2-6311e88.pdb" target="lib/netstandard2.0/lib/win32/x64" />
+    <file src="Nuke.Git.Utilities/bin/Release/lib/win32/x86/git2-6311e88.dll" target="lib/netstandard2.0/lib/win32/x86" />
+    <file src="Nuke.Git.Utilities/bin/Release/lib/win32/x86/git2-6311e88.pdb" target="lib/netstandard2.0/lib/win32/x86" />
+  </files>
+</package>
