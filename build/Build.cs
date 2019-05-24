@@ -2,10 +2,11 @@ using System;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.Execution;
+using Nuke.Common.Git;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
-using Nuke.Common.Utilities.Collections;
 using Nuke.Common.Tools.MSBuild;
+using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
@@ -27,27 +28,37 @@ class Build : NukeBuild
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution] readonly Solution Solution;
+    [GitRepository] readonly GitRepository GitRepository;
+
+    AbsolutePath TestsDirectory => RootDirectory / "tests";
+    AbsolutePath OutputDirectory => RootDirectory / "output";
 
     Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
         {
+            TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
+            EnsureCleanDirectory(OutputDirectory);
         });
 
     Target Restore => _ => _
         .Executes(() =>
         {
+            MSBuild(s => s
+                .SetTargetPath(Solution)
+                .SetTargets("Restore"));
         });
 
     Target Compile => _ => _
         .DependsOn(Restore)
         .Executes(() =>
         {
-            MSBuild(o => o
+            MSBuild(s => s
                 .SetTargetPath(Solution)
-                .SetTargets("Clean", "Build")
+                .SetTargets("Rebuild")
                 .SetConfiguration(Configuration)
-                .EnableNodeReuse());
+                .SetMaxCpuCount(Environment.ProcessorCount)
+                .SetNodeReuse(IsLocalBuild));
         });
 
 }
