@@ -16,8 +16,20 @@ namespace Nuke.Git.Utilities.GitPackager
         /// <param name="projectPath">Git repository path.</param>
         /// <param name="baselineName">Baseline name of the base commit to check against</param>
         /// <param name="diffAction">Action that is executed</param>
+        public static void DiffFromBaseline(AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction)
+        {
+            DiffFromBaseline(projectPath, baselineName, null, diffAction);
+        }
+
+        /// <summary>
+        /// With an existing project
+        /// Find what files have changed between the current commit and a baseline tag and return the 
+        /// </summary>
+        /// <param name="projectPath">Git repository path.</param>
+        /// <param name="baselineName">Baseline name of the base commit to check against</param>
+        /// <param name="diffAction">Action that is executed</param>
         /// <param name="branchName">Branchname </param>
-        public static void DiffFromBaseline(AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction, string branchName = null)
+        public static void DiffFromBaseline(AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction)
         {
             if(string.IsNullOrEmpty(projectPath))
             {
@@ -51,9 +63,14 @@ namespace Nuke.Git.Utilities.GitPackager
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);
             Logger.Info($"Finished rebuilding repository");
-            DiffFromBaseline(repository, diffAction, baselineName);
+            DiffFromBaseline(repository, diffAction, baselineName, branchName);
         }
 
+        /// <summary>
+        /// Build clone options for an empty .git directory with only the used parameter
+        /// </summary>
+        /// <param name="credentialsHandler"></param>
+        /// <returns></returns>
         private static CloneOptions GetCloneOptions(CredentialsHandler credentialsHandler)
         {
             return new CloneOptions
@@ -69,22 +86,22 @@ namespace Nuke.Git.Utilities.GitPackager
             {
                 var baselineCommit = FindBaseline(repository, baselineName);
                 var branchCommits = FindBranchCommit(repository, branchName);
-                var latestBranchCommit = branchCommits.First().Sha;
-
-                if (string.IsNullOrWhiteSpace(baselineCommit))
+                
+                if (baselineCommit == null)
                 {
                     throw new InvalidOperationException($"Tag and Commit are not found for {baselineName}");
                 }
+                
+                var filter = new CommitFilter { ExcludeReachableFrom = baselineCommit, IncludeReachableFrom = branchCommits };
+                var allCommits = repository.Commits.QueryBy(filter).ToList();
+                var branchCommitSha = allCommits.First().Sha;
+                var baselineCommitSha = baselineCommit.Sha;
+                Logger.Info($"Processing changes from commit='{baselineCommitSha}' to commit='{branchCommitSha}'");
 
-                Logger.Info($"Processing changes from commit='{baselineCommit}' to commit='{latestBranchCommit}'");
-
-                var filter = new CommitFilter { ExcludeReachableFrom = baselineCommit };
-                var commits = repository.Commits.QueryBy(filter).ToList();
-
-                if (commits.Any())
+                if (allCommits.Any())
                 {
                     var newCommit = branchCommits.First();
-                    var oldCommit = commits.Count == 1 ? newCommit.Parents.First() : commits.Last();
+                    var oldCommit = allCommits.Count == 1 ? newCommit.Parents.First() : allCommits.Last();
 
                     var changes = repository.Diff.Compare<TreeChanges>(oldCommit.Tree, newCommit.Tree);
                     diffAction(changes);
@@ -96,10 +113,10 @@ namespace Nuke.Git.Utilities.GitPackager
             }
         }
 
-        private static string FindBaseline(Repository gitRepo, string baselineName)
+        private static GitObject FindBaseline(Repository gitRepo, string baselineName)
         {
             var tag = gitRepo.Tags[baselineName];
-            return tag?.Target?.Sha;
+            return tag?.Target;
         }
 
         private static ICommitLog FindBranchCommit(Repository repository, string branchName = null)

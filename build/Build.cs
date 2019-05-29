@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Linq;
 using LibGit2Sharp;
 using Nuke.Common;
 using Nuke.Common.Execution;
@@ -69,27 +71,43 @@ class Build : NukeBuild
 
         });
 
+    #region Test case of git diff
+
     [Parameter]
-    readonly string Repository;
+    readonly string Repository = "https://github.com/jajvisser/Nuke.Build.GitExtensions.git";
     [Parameter]
-    readonly string Username;
+    readonly string GitUsername;
     [Parameter]
-    readonly string Password;
+    readonly string GitPassword;
 
     Target TestGit => _ => _
         .Requires(() => Repository)
-        .Requires(() => Username)
-        .Requires(() => Password)
+        .Requires(() => GitUsername)
+        .Requires(() => GitPassword)
         .Executes(() =>
         {
             var gitMirror = RootDirectory / ".gitmirror";
             EnsureCleanDirectory(gitMirror);
 
-            // Diff from baseline
-            DiffFromBaseline(gitMirror, Repository, "baseline", "test-branch", (changes) =>
+            // Diff from remote baseline
+            DiffFromBaseline(gitMirror, Repository, "baseline", "origin/test-branch", (changes) =>
             {
-                var added = changes;
-            }, (url, x, y) => new UsernamePasswordCredentials() { Username = Username, Password = Password });
-        });
+                var added = changes.Added.Select(s=>s.Path);
+                Debug.Assert(added.Contains("test-file.txt"));
+            }, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
 
+            // Diff from local baseline
+            DiffFromBaseline(RootDirectory, "baseline", (changes) =>
+            {
+                var added = changes.Added.Select(s => s.Path);
+                Debug.Assert(!added.Contains("test-file.txt"));
+            });
+
+            DiffFromBaseline(RootDirectory, "baseline", "origin/test-branch", (changes) =>
+            {
+                var added = changes.Added.Select(s => s.Path);
+                Debug.Assert(added.Contains("test-file.txt"));
+            });
+        });
+    #endregion
 }
