@@ -10,7 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Common" Version="0.19.2" />
+    <PackageReference Include="LibGit2Sharp" Version="0.26.0" />
+    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+    <PackageReference Include="Nuke.Common" Version="0.20.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +31,10 @@
     <None Include="..\appveyor.yml" Condition="Exists('..\appveyor.yml')" />
     <None Include="..\.travis.yml" Condition="Exists('..\.travis.yml')" />
     <None Include="..\GitVersion.yml" Condition="Exists('..\GitVersion.yml')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nuke.Git.Extensions\Nuke.Git.Extensions.csproj" />
   </ItemGroup>
 
 </Project>

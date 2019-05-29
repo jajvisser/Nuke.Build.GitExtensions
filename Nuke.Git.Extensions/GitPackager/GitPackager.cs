@@ -68,14 +68,14 @@ namespace Nuke.Git.Utilities.GitPackager
             using (repository)
             {
                 var baselineCommit = FindBaseline(repository, baselineName);
-                var branchCommit = FindBranchCommit(repository, branchName);
+                var latestBranchCommit = FindBranchCommit(repository, branchName);
 
                 if (string.IsNullOrWhiteSpace(baselineCommit))
                 {
                     throw new InvalidOperationException($"Tag and Commit are not found for {baselineName}");
                 }
 
-                Logger.Info($"Processing changes till {baselineCommit}");
+                Logger.Info($"Processing changes from commit='{baselineCommit}' to commit='{latestBranchCommit}'");
 
                 var filter = new CommitFilter { ExcludeReachableFrom = baselineCommit };
                 var commits = repository.Commits.QueryBy(filter).ToList();

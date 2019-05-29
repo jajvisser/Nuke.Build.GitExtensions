@@ -18,6 +18,7 @@ mono_crash.*
 
 #Test script ignore
 testbuild.bat
+.gitmirror/
 
 # Build results
 [Dd]ebug/
