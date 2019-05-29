@@ -6,6 +6,8 @@ using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Utilities.Collections;
 using Configuration = Nuke.Common.Configuration;
@@ -14,6 +16,8 @@ using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using static Nuke.Git.Utilities.GitPackager.GitPackager;
 using Nuke.Git.Utilities.GitPackager;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using Nuke.Common.Tooling;
 
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
@@ -31,7 +35,9 @@ class Build : NukeBuild
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution] readonly Solution Solution;
-    [GitRepository] readonly GitRepository GitRepository;
+
+    [Parameter]
+    readonly string BuildVersion = "0.1";
 
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath OutputDirectory => RootDirectory / "output";
@@ -47,28 +53,49 @@ class Build : NukeBuild
     Target Restore => _ => _
         .Executes(() =>
         {
-            MSBuild(s => s
-                .SetTargetPath(Solution)
-                .SetTargets("Restore"));
-        });
+            DotNetRestore(s => s
+                .SetProjectFile(Solution));
 
+            
+        });
+    
     Target Compile => _ => _
         .DependsOn(Restore)
         .Executes(() =>
         {
-            MSBuild(s => s
-                .SetTargetPath(Solution)
-                .SetTargets("Rebuild")
+            DotNetBuild(o => o.SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
-                .SetMaxCpuCount(Environment.ProcessorCount)
-                .SetNodeReuse(IsLocalBuild));
+                .SetAssemblyVersion(BuildVersion)
+                .SetFileVersion(BuildVersion)
+                .SetInformationalVersion(BuildVersion));
         });
+
+    [Parameter] readonly string Source = "https://api.nuget.org/v3/index.json";
+    [Parameter] readonly string SymbolSource = "https://nuget.smbsrc.net/";
+    [Parameter] readonly string ApiKey;
 
     Target Pack => _ => _
         .DependsOn(Compile)
         .Executes(() =>
         {
+            DotNetPack(s => s
+                .SetProject(Solution)
+                .EnableNoBuild()
+                .SetConfiguration(Configuration)
+                .EnableIncludeSymbols()
+                .SetVersion(BuildVersion)
+                .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
+                .SetOutputDirectory(OutputDirectory));
 
+            DotNetNuGetPush(s => s
+                    .SetSource(Source)
+                    .SetSymbolSource(SymbolSource)
+                    .SetApiKey(ApiKey)
+                    .CombineWith(
+                        OutputDirectory.GlobFiles("*.nupkg").NotEmpty(), (cs, v) => cs
+                            .SetTargetPath(v)),
+                degreeOfParallelism: 5,
+                completeOnFailure: true);
         });
 
     #region Test case of git diff
