@@ -68,7 +68,8 @@ namespace Nuke.Git.Utilities.GitPackager
             using (repository)
             {
                 var baselineCommit = FindBaseline(repository, baselineName);
-                var latestBranchCommit = FindBranchCommit(repository, branchName);
+                var branchCommits = FindBranchCommit(repository, branchName);
+                var latestBranchCommit = branchCommits.First().Sha;
 
                 if (string.IsNullOrWhiteSpace(baselineCommit))
                 {
@@ -82,7 +83,7 @@ namespace Nuke.Git.Utilities.GitPackager
 
                 if (commits.Any())
                 {
-                    var newCommit = commits.First();
+                    var newCommit = branchCommits.First();
                     var oldCommit = commits.Count == 1 ? newCommit.Parents.First() : commits.Last();
 
                     var changes = repository.Diff.Compare<TreeChanges>(oldCommit.Tree, newCommit.Tree);
@@ -101,16 +102,16 @@ namespace Nuke.Git.Utilities.GitPackager
             return tag?.Target?.Sha;
         }
 
-        private static string FindBranchCommit(Repository repository, string branchName = null)
+        private static ICommitLog FindBranchCommit(Repository repository, string branchName = null)
         {
             if(string.IsNullOrEmpty(branchName))
             {
-                return repository.Commits.First().Sha;
+                return repository.Commits;
             }
 
             // Find latest commits
             var branch = repository.Branches[branchName];
-            return branch?.Commits?.First()?.Sha;
+            return branch?.Commits;
         }
     }
 }

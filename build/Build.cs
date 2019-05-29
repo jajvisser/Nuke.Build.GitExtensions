@@ -86,7 +86,7 @@ class Build : NukeBuild
             EnsureCleanDirectory(gitMirror);
 
             // Diff from baseline
-            DiffFromBaseline(gitMirror, Repository, "baseline", "master", (changes) =>
+            DiffFromBaseline(gitMirror, Repository, "baseline", "test-branch", (changes) =>
             {
                 var added = changes;
             }, (url, x, y) => new UsernamePasswordCredentials() { Username = Username, Password = Password });
