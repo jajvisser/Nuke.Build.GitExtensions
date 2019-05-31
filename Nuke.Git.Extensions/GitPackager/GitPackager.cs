@@ -1,11 +1,11 @@
-﻿using LibGit2Sharp;
+﻿using System;
+using System.Linq;
+using LibGit2Sharp;
 using LibGit2Sharp.Handlers;
 using Nuke.Common;
-using System;
-using System.Linq;
-using static Nuke.Common.IO.PathConstruction;
+using Nuke.Common.IO;
 
-namespace Nuke.Git.Utilities.GitPackager
+namespace Nuke.Git.Extensions.GitPackager
 {
     public static class GitPackager
     {
@@ -15,8 +15,8 @@ namespace Nuke.Git.Utilities.GitPackager
         /// </summary>
         /// <param name="projectPath">Git repository path.</param>
         /// <param name="baselineName">Baseline name of the base commit to check against</param>
-        /// <param name="diffAction">Action that is executed</param>
-        public static void DiffFromBaseline(AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction)
+        /// <param name="diffAction">Action that is executed with the changes that are detected</param>
+        public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction)
         {
             DiffFromBaseline(projectPath, baselineName, null, diffAction);
         }
@@ -27,9 +27,9 @@ namespace Nuke.Git.Utilities.GitPackager
         /// </summary>
         /// <param name="projectPath">Git repository path.</param>
         /// <param name="baselineName">Baseline name of the base commit to check against</param>
-        /// <param name="diffAction">Action that is executed</param>
-        /// <param name="branchName">Branchname </param>
-        public static void DiffFromBaseline(AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction)
+        /// <param name="branchName">Branch name that is taken as diff</param>
+        /// <param name="diffAction">Action that is executed with the changes that are detected</param>
+        public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction)
         {
             if(string.IsNullOrEmpty(projectPath))
             {
@@ -44,54 +44,48 @@ namespace Nuke.Git.Utilities.GitPackager
             // 
             var repository = new Repository(projectPath);
             Logger.Info($"Repository on {projectPath} initialized");
-            DiffFromBaseline(repository, diffAction, baselineName, branchName);
+            DiffFromBaselineInternal(repository, diffAction, baselineName, branchName);
         }
 
         /// <summary>
-        /// Workaround for agents in teamcity, since the .git directory
+        /// Workaround for agents in teamcity, since the .git directory is not copied from teamcity to the agent.
+        /// This function regenerates the .git directory so that see the diff
         /// Find what files have changed between the current commit and a baseline tag and return the 
         /// </summary>
-        /// <param name="projectPath"></param>
-        /// <param name="repositoryUrl"></param>
-        /// <param name="baselineName"></param>
-        /// <param name="branchName"></param>
-        /// <param name="diffAction"></param>
-        /// <param name="credentialsHandler"></param>
-        public static void DiffFromBaseline(AbsolutePath projectPath, string repositoryUrl, string baselineName, string branchName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
+        /// <param name="projectPath">Git repository path.</param>
+        /// <param name="repositoryUrl">Git repository url</param>
+        /// <param name="baselineName">Baseline name of the base commit to check against</param>
+        /// <param name="branchName">Branch name that is taken as diff</param>
+        /// <param name="diffAction">Action that is executed with the changes that are detected</param>
+        /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
+        public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string repositoryUrl, string baselineName, string branchName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
         {
             Logger.Info($"Starting rebuilding repository");
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);
             Logger.Info($"Finished rebuilding repository");
-            DiffFromBaseline(repository, diffAction, baselineName, branchName);
+            DiffFromBaselineInternal(repository, diffAction, baselineName, branchName);
         }
 
         /// <summary>
-        /// Build clone options for an empty .git directory with only the used parameter
+        /// Internal function to run the baseline diff
         /// </summary>
-        /// <param name="credentialsHandler"></param>
-        /// <returns></returns>
-        private static CloneOptions GetCloneOptions(CredentialsHandler credentialsHandler)
-        {
-            return new CloneOptions
-            {
-                IsBare = true,
-                CredentialsProvider = credentialsHandler
-            };
-        }
-
-        private static void DiffFromBaseline(Repository repository, Action<TreeChanges> diffAction, string baselineName, string branchName = null)
+        /// <param name="repository">Retrieved repository instance</param>
+        /// <param name="diffAction">Action that is executed with the changes that are detected</param>
+        /// <param name="baselineName">Baseline name of the base commit to check against</param>
+        /// <param name="branchName">Branch name that is taken as diff</param>
+        private static void DiffFromBaselineInternal(Repository repository, Action<TreeChanges> diffAction, string baselineName, string branchName = null)
         {
             using (repository)
             {
                 var baselineCommit = FindBaseline(repository, baselineName);
                 var branchCommits = FindBranchCommit(repository, branchName);
-                
+
                 if (baselineCommit == null)
                 {
                     throw new InvalidOperationException($"Tag and Commit are not found for {baselineName}");
                 }
-                
+
                 var filter = new CommitFilter { ExcludeReachableFrom = baselineCommit, IncludeReachableFrom = branchCommits };
                 var allCommits = repository.Commits.QueryBy(filter).ToList();
                 var branchCommitSha = allCommits.First().Sha;
@@ -113,6 +107,21 @@ namespace Nuke.Git.Utilities.GitPackager
             }
         }
 
+        #region Private methods
+        /// <summary>
+        /// Build clone options for an empty .git directory with only the used parameter
+        /// </summary>
+        /// <param name="credentialsHandler"></param>
+        /// <returns></returns>
+        private static CloneOptions GetCloneOptions(CredentialsHandler credentialsHandler)
+        {
+            return new CloneOptions
+            {
+                IsBare = true,
+                CredentialsProvider = credentialsHandler
+            };
+        }
+
         private static GitObject FindBaseline(Repository gitRepo, string baselineName)
         {
             var tag = gitRepo.Tags[baselineName];
@@ -130,5 +139,7 @@ namespace Nuke.Git.Utilities.GitPackager
             var branch = repository.Branches[branchName];
             return branch?.Commits;
         }
+
+        #endregion
     }
 }

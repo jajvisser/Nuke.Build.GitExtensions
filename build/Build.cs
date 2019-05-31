@@ -1,21 +1,16 @@
-using System;
 using System.Diagnostics;
 using System.Linq;
 using LibGit2Sharp;
 using Nuke.Common;
 using Nuke.Common.Execution;
-using Nuke.Common.Git;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
-using Nuke.Common.Tools.GitVersion;
-using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Utilities.Collections;
 using Configuration = Nuke.Common.Configuration;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
-using static Nuke.Git.Utilities.GitPackager.GitPackager;
-using Nuke.Git.Utilities.GitPackager;
+using static Nuke.Git.Extensions.GitPackager.GitPackager;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Nuke.Common.Tooling;
 
