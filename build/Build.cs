@@ -9,8 +9,7 @@ using Nuke.Common.Utilities.Collections;
 using Configuration = Nuke.Common.Configuration;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
-using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
-using static Nuke.Git.Extensions.GitPackager.GitPackager;
+using static Nuke.Git.Extensions.GitPackager.GitPackagerTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Nuke.Common.Tooling;
 
@@ -66,7 +65,6 @@ class Build : NukeBuild
         });
 
     [Parameter] readonly string Source = "https://api.nuget.org/v3/index.json";
-    [Parameter] readonly string SymbolSource = "https://nuget.smbsrc.net/";
     [Parameter] readonly string ApiKey;
 
     Target Pack => _ => _
@@ -79,19 +77,23 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .EnableIncludeSymbols()
                 .SetVersion(BuildVersion)
-                .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
                 .SetOutputDirectory(OutputDirectory));
+        });
 
+    Target Push => _ => _
+        .DependsOn(Pack)
+        .Requires(() => Configuration == Configuration.Release)
+        .Executes(() =>
+        {
             DotNetNuGetPush(s => s
                     .SetSource(Source)
-                    .SetSymbolSource(SymbolSource)
                     .SetApiKey(ApiKey)
                     .CombineWith(
                         OutputDirectory.GlobFiles("*.nupkg").NotEmpty(), (cs, v) => cs
                             .SetTargetPath(v)),
                 degreeOfParallelism: 5,
                 completeOnFailure: true);
-        });
+        })
 
     #region Test case of git diff
 

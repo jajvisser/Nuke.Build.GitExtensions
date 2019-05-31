@@ -7,7 +7,7 @@ using Nuke.Common.IO;
 
 namespace Nuke.Git.Extensions.GitPackager
 {
-    public static class GitPackager
+    public static class GitPackagerTasks
     {
         /// <summary>
         /// With an existing project
