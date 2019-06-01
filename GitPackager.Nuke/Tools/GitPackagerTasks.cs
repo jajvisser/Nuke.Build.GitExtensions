@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
+using GitPackager.Nuke.Tools.Exceptions;
 using LibGit2Sharp;
 using LibGit2Sharp.Handlers;
 using Nuke.Common;
+using Nuke.Common.BuildServers;
 using Nuke.Common.IO;
 
 namespace GitPackager.Nuke.Tools
@@ -53,14 +55,44 @@ namespace GitPackager.Nuke.Tools
         /// Find what files have changed between the current commit and a baseline tag and return the 
         /// </summary>
         /// <param name="projectPath">Git repository path.</param>
-        /// <param name="repositoryUrl">Git repository url</param>
+        /// <param name="baselineName">Baseline name of the base commit to check against</param>
+        /// <param name="diffAction">Action that is executed with the changes that are detected</param>
+        /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
+        public static void TeamcityDiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
+        {
+            if (TeamCity.Instance == null)
+            {
+                throw new NoTeamcityInstanceException();
+            }
+
+            Logger.Info($"Starting rebuilding repository");
+            var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
+            var currentBranch = TeamCity.Instance.ConfigurationProperties["teamcity_build_branch"];
+            var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
+            var repository = new Repository(destination);
+            Logger.Info($"Finished rebuilding repository");
+            DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
+        }
+
+        /// <summary>
+        /// Workaround for agents in teamcity, since the .git directory is not copied from teamcity to the agent.
+        /// This function regenerates the .git directory so that see the diff
+        /// Find what files have changed between the current commit and a baseline tag and return the 
+        /// </summary>
+        /// <param name="projectPath">Git repository path.</param>
         /// <param name="baselineName">Baseline name of the base commit to check against</param>
         /// <param name="branchName">Branch name that is taken as diff</param>
         /// <param name="diffAction">Action that is executed with the changes that are detected</param>
         /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
-        public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string repositoryUrl, string baselineName, string branchName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
+        public static void TeamcityDiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
         {
+            if (TeamCity.Instance == null)
+            {
+                throw new NoTeamcityInstanceException();
+            }
+
             Logger.Info($"Starting rebuilding repository");
+            var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);
             Logger.Info($"Finished rebuilding repository");

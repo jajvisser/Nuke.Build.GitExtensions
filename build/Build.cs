@@ -121,38 +121,38 @@ class Build : NukeBuild
         .Executes(() =>
         {
             var gitMirror = RootDirectory / ".gitmirror";
+
             EnsureCleanDirectory(gitMirror);
-
-            var repository = TeamCity.Instance != null ? TeamCity.Instance.ServerUrl : Repository;
-            if (TeamCity.Instance?.ConfigurationProperties != null)
-            {
-                foreach (var property in TeamCity.Instance?.ConfigurationProperties)
-                {
-                    Logger.Info(property.Key + "=>" + property.Value);
-                }
-            }
-
-            Logger.Info(repository);
-
             // Diff from remote baseline
-            DiffFromBaseline(gitMirror, repository, "baseline", "origin/test-branch", (changes) =>
+            TeamcityDiffFromBaseline(gitMirror, "baseline", "origin/test-branch", (changes) =>
             {
                 var added = changes.Added.Select(s=>s.Path);
                 Debug.Assert(added.Contains("test-file.txt"));
             }, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
 
-            // Diff from local baseline
-            DiffFromBaseline(RootDirectory, "baseline", (changes) =>
-            {
-                var added = changes.Added.Select(s => s.Path);
-                Debug.Assert(!added.Contains("test-file.txt"));
-            });
-
-            DiffFromBaseline(RootDirectory, "baseline", "origin/test-branch", (changes) =>
+            EnsureCleanDirectory(gitMirror);
+            // Diff from remote baseline
+            TeamcityDiffFromBaseline(gitMirror, "baseline", (changes) =>
             {
                 var added = changes.Added.Select(s => s.Path);
                 Debug.Assert(added.Contains("test-file.txt"));
-            });
+            }, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
+
+            if (TeamCity.Instance == null)
+            {
+                // Diff from local baseline
+                DiffFromBaseline(RootDirectory, "baseline", (changes) =>
+                {
+                    var added = changes.Added.Select(s => s.Path);
+                    Debug.Assert(!added.Contains("test-file.txt"));
+                });
+
+                DiffFromBaseline(RootDirectory, "baseline", "origin/test-branch", (changes) =>
+                {
+                    var added = changes.Added.Select(s => s.Path);
+                    Debug.Assert(added.Contains("test-file.txt"));
+                });
+            }
         });
     #endregion
 }
