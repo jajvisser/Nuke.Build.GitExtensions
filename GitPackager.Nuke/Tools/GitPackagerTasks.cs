@@ -124,6 +124,11 @@ namespace GitPackager.Nuke.Tools
                     throw new InvalidOperationException($"Tag and Commit are not found for {baselineName}");
                 }
 
+                if (branchCommits == null)
+                {
+                    throw new InvalidOperationException($"Branch not found {branchName}, following branches found {string.Join(",", repository.Branches.Select(s=>s.CanonicalName))}");
+                }
+
                 var filter = new CommitFilter { ExcludeReachableFrom = baselineCommit, IncludeReachableFrom = branchCommits };
                 var allCommits = repository.Commits.QueryBy(filter).ToList();
                 var branchCommitSha = allCommits.First().Sha;
