@@ -9,12 +9,12 @@ Install-Package GitPackager.Nuke
 ```
 
 # Support
-- .NET Core 2.0 >=
-- .NET Framework 4.6.1 >=
+* .NET Core 2.0
+* .NET Framework 4.6.1 
 
 ## Dependency
-Nuke.Build.Common - 0.20
-GitLib2Sharp - 0.26
+* Nuke.Build.Common >= 0.20
+* GitLib2Sharp >= 0.26
 
 # Integration to build
 First include the static using of the `GitPackager` into your `Build.cs`
