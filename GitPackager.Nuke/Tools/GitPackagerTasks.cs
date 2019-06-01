@@ -62,16 +62,21 @@ namespace GitPackager.Nuke.Tools
         {
             if (TeamCity.Instance == null)
             {
-                throw new NoTeamcityInstanceException();
+                throw new NoTeamcityInstanceException("No teamcity instance detected");
             }
-            var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
-            var currentBranch = TeamCity.Instance.ConfigurationProperties["teamcity_build_branch"];
 
-            Logger.Info($"Starting rebuilding repository {repositoryUrl} and branch {currentBranch}");
+            var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
+            var currentBranch = TeamCity.Instance.ConfigurationProperties.FirstOrDefault(s=>s.Key.StartsWith("teamcity_build_vcs_branch"));
+            if (currentBranch.Key == null)
+            {
+                throw new NoTeamcityInstanceException($"Configuration property teamcity_build_vcs_branch");
+            }
+
+            Logger.Info($"Starting rebuilding repository {repositoryUrl} and branch {currentBranch.Value}");
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);
-            Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch}");
-            DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
+            Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch.Value}");
+            DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch.Value);
         }
 
         /// <summary>
@@ -88,10 +93,11 @@ namespace GitPackager.Nuke.Tools
         {
             if (TeamCity.Instance == null)
             {
-                throw new NoTeamcityInstanceException();
+                throw new NoTeamcityInstanceException("No teamcity instance detected");
             }
 
             var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
+
             Logger.Info($"Starting rebuilding repository {repositoryUrl}");
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);

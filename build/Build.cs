@@ -130,23 +130,25 @@ class Build : NukeBuild
                 }
             }
 
-            EnsureCleanDirectory(gitMirror);
-            // Diff from remote baseline
-            TeamcityDiffFromBaseline(gitMirror, "baseline", "origin/test-branch", (changes) =>
-            {
-                var added = changes.Added.Select(s=>s.Path);
-                Debug.Assert(added.Contains("test-file.txt"));
-            }, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
+            if (TeamCity.Instance != null)
+            { 
+                EnsureCleanDirectory(gitMirror);
+                // Diff from remote baseline
+                TeamcityDiffFromBaseline(gitMirror, "baseline", "origin/test-branch", (changes) =>
+                {
+                    var added = changes.Added.Select(s => s.Path);
+                    Debug.Assert(added.Contains("test-file.txt"));
+                }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
 
-            EnsureCleanDirectory(gitMirror);
-            // Diff from remote baseline
-            TeamcityDiffFromBaseline(gitMirror, "baseline", (changes) =>
-            {
-                var added = changes.Added.Select(s => s.Path);
-                Debug.Assert(added.Contains("test-file.txt"));
-            }, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
-
-            if (TeamCity.Instance == null)
+                EnsureCleanDirectory(gitMirror);
+                // Diff from remote baseline
+                TeamcityDiffFromBaseline(gitMirror, "baseline", (changes) =>
+                {
+                    var added = changes.Added.Select(s => s.Path);
+                    Debug.Assert(added.Contains("test-file.txt"));
+                }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
+            }
+            else
             {
                 // Diff from local baseline
                 DiffFromBaseline(RootDirectory, "baseline", (changes) =>
