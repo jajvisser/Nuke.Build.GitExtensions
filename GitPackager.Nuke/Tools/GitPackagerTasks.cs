@@ -64,13 +64,13 @@ namespace GitPackager.Nuke.Tools
             {
                 throw new NoTeamcityInstanceException();
             }
-
-            Logger.Info($"Starting rebuilding repository");
             var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
             var currentBranch = TeamCity.Instance.ConfigurationProperties["teamcity_build_branch"];
+
+            Logger.Info($"Starting rebuilding repository {repositoryUrl} and branch {currentBranch}");
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);
-            Logger.Info($"Finished rebuilding repository");
+            Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch}"");
             DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
         }
 
@@ -91,11 +91,11 @@ namespace GitPackager.Nuke.Tools
                 throw new NoTeamcityInstanceException();
             }
 
-            Logger.Info($"Starting rebuilding repository");
             var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
+            Logger.Info($"Starting rebuilding repository {repositoryUrl}");
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);
-            Logger.Info($"Finished rebuilding repository");
+            Logger.Info($"Finished rebuilding repository {repositoryUrl}");
             DiffFromBaselineInternal(repository, diffAction, baselineName, branchName);
         }
 
