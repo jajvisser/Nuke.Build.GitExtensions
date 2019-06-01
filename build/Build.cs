@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Linq;
+using GitPackager.Nuke.Tools;
 using LibGit2Sharp;
+using Microsoft.Build.Tasks;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.ProjectModel;
@@ -12,6 +14,7 @@ using static Nuke.Common.IO.PathConstruction;
 using static GitPackager.Nuke.Tools.GitPackagerTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Nuke.Common.Tooling;
+using GitPackager.Nuke.Tools;
 
 [CheckBuildProjectConfigurations]
 [DotNetVerbosityMapping]
@@ -26,7 +29,7 @@ class Build : NukeBuild
 
     public static int Main() => Execute<Build>(x => x.Compile);
 
-    const string Description = "Nuke Build to help filter projects based on a baseline tag, this also supports all setups in teamcity, based on the Cake GitPackager";
+    const string Description = "Nuke Build to help filter projects based on a baseline tag. This also clone its own .git directory. Based on the Cake GitPackager";
     const string Author = "Joris Visser";
     const string ReleaseNotes = "1.0 - Initial release";
 
@@ -35,8 +38,7 @@ class Build : NukeBuild
 
     [Solution] readonly Solution Solution;
 
-    [Parameter]
-    readonly string BuildVersion;
+    [Parameter] readonly string BuildVersion;
 
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath OutputDirectory => RootDirectory / "output";
@@ -54,8 +56,6 @@ class Build : NukeBuild
         {
             DotNetRestore(s => s
                 .SetProjectFile(Solution));
-
-            
         });
     
     Target Compile => _ => _
