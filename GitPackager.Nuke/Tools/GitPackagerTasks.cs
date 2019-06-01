@@ -145,7 +145,7 @@ namespace GitPackager.Nuke.Tools
                 }
                 else
                 {
-                    Logger.Info($"No commits found on repository");
+                    Logger.Info("No commits found on repository");
                 }
             }
         }
@@ -179,7 +179,7 @@ namespace GitPackager.Nuke.Tools
             }
 
             // Find latest commits
-            var branch = repository.Branches.FirstOrDefault(s => s.FriendlyName == branchName);
+            var branch = repository.Branches.FirstOrDefault(s => s.FriendlyName.EndsWith(branchName, StringComparison.OrdinalIgnoreCase));
             return branch?.Commits;
         }
 
