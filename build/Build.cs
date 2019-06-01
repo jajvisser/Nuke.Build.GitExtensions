@@ -122,6 +122,14 @@ class Build : NukeBuild
         {
             var gitMirror = RootDirectory / ".gitmirror";
 
+            if (TeamCity.Instance?.ConfigurationProperties != null)
+            {
+                foreach (var property in TeamCity.Instance?.ConfigurationProperties)
+                {
+                    Logger.Info(property.Key + "=>" + property.Value);
+                }
+            }
+
             EnsureCleanDirectory(gitMirror);
             // Diff from remote baseline
             TeamcityDiffFromBaseline(gitMirror, "baseline", "origin/test-branch", (changes) =>
