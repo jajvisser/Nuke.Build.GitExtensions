@@ -126,7 +126,7 @@ namespace GitPackager.Nuke.Tools
 
                 if (branchCommits == null)
                 {
-                    throw new InvalidOperationException($"Branch not found {branchName}, following branches found {string.Join(",", repository.Branches.Select(s=>s.CanonicalName))}");
+                    throw new InvalidOperationException($"Branch not found {branchName}, following branches found {string.Join(", ", repository.Branches.Select(s=>s.FriendlyName))}");
                 }
 
                 var filter = new CommitFilter { ExcludeReachableFrom = baselineCommit, IncludeReachableFrom = branchCommits };
@@ -179,7 +179,7 @@ namespace GitPackager.Nuke.Tools
             }
 
             // Find latest commits
-            var branch = repository.Branches[branchName];
+            var branch = repository.Branches.FirstOrDefault(s => s.FriendlyName == branchName);
             return branch?.Commits;
         }
 
