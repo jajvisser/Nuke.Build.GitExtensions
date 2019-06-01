@@ -122,19 +122,11 @@ class Build : NukeBuild
         {
             var gitMirror = RootDirectory / ".gitmirror";
 
-            if (TeamCity.Instance?.ConfigurationProperties != null)
-            {
-                foreach (var property in TeamCity.Instance?.ConfigurationProperties)
-                {
-                    Logger.Info(property.Key + "=>" + property.Value);
-                }
-            }
-
             if (TeamCity.Instance != null)
             { 
                 EnsureCleanDirectory(gitMirror);
                 // Diff from remote baseline
-                TeamcityDiffFromBaseline(gitMirror, "baseline", "origin/test-branch", (changes) =>
+                TeamcityDiffFromBaseline(gitMirror, "baseline", "test-branch", (changes) =>
                 {
                     var added = changes.Added.Select(s => s.Path);
                     Debug.Assert(added.Contains("test-file.txt"));
@@ -154,12 +146,14 @@ class Build : NukeBuild
                 DiffFromBaseline(RootDirectory, "baseline", (changes) =>
                 {
                     var added = changes.Added.Select(s => s.Path);
+                    added.ForEach(s => Logger.Info(s));
                     Debug.Assert(!added.Contains("test-file.txt"));
                 });
 
                 DiffFromBaseline(RootDirectory, "baseline", "origin/test-branch", (changes) =>
                 {
                     var added = changes.Added.Select(s => s.Path);
+                    added.ForEach(s => Logger.Info(s));
                     Debug.Assert(added.Contains("test-file.txt"));
                 });
             }
