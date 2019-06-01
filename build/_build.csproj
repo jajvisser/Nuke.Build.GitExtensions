@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Nuke.Git.Extensions\Nuke.Git.Extensions.csproj" />
+    <ProjectReference Include="..\GitPackager.Nuke\GitPackager.Nuke.csproj" />
   </ItemGroup>
 
 </Project>

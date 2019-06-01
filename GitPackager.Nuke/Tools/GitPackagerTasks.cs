@@ -5,7 +5,7 @@ using LibGit2Sharp.Handlers;
 using Nuke.Common;
 using Nuke.Common.IO;
 
-namespace Nuke.Git.Extensions.GitPackager
+namespace GitPackager.Nuke.Tools
 {
     public static class GitPackagerTasks
     {

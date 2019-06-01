@@ -1,11 +1,11 @@
 ﻿<package>
   <metadata>
-    <id>Nuke.Git.Utilities</id>
-    <title>Nuke.Git.Utilities</title>
+    <id>GitPackager.Nuke</id>
+    <title>GitPackager.Nuke</title>
     <version>0.1</version>
     <authors>JAJ Visser</authors>
     <owners>JAJ Visser</owners>
-    <description>Nuke Build separate GIT builds on baseline tags and support for teamcity, based on the Cake GitPackager</description>
+    <description>Nuke Build to filter multiple projects based on a baseline tag and support for teamcity, based on the Cake GitPackager</description>
     <licenseUrl>https://github.com/ilich/Nuke.Git.Utilities/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/ilich/Nuke.Git.Utilities</projectUrl>
     <iconUrl>https://cdn.rawgit.com/cake-contrib/graphics/a5cf0f881c390650144b2243ae551d5b9f836196/png/cake-contrib-medium.png</iconUrl>

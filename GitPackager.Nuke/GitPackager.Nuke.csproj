@@ -7,8 +7,4 @@
     <PackageReference Include="LibGit2Sharp" Version="0.26.0" />
     <PackageReference Include="Nuke.Common" Version="0.20.0" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <None Include="Nuke.Git.Utilities.nuspec" />
-  </ItemGroup>
 </Project>

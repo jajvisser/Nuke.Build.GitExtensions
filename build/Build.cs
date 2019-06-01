@@ -9,11 +9,12 @@ using Nuke.Common.Utilities.Collections;
 using Configuration = Nuke.Common.Configuration;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
-using static Nuke.Git.Extensions.GitPackager.GitPackagerTasks;
+using static GitPackager.Nuke.Tools.GitPackagerTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Nuke.Common.Tooling;
 
 [CheckBuildProjectConfigurations]
+[DotNetVerbosityMapping]
 [UnsetVisualStudioEnvironmentVariables]
 class Build : NukeBuild
 {
@@ -24,6 +25,10 @@ class Build : NukeBuild
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
     public static int Main() => Execute<Build>(x => x.Compile);
+
+    const string Description = "Nuke Build to help filter projects based on a baseline tag, this also supports all setups in teamcity, based on the Cake GitPackager";
+    const string Author = "";
+    const string ReleaseNotes = "";
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
@@ -74,8 +79,10 @@ class Build : NukeBuild
             DotNetPack(s => s
                 .SetProject(Solution)
                 .EnableNoBuild()
+                .SetDescription()
+                .SetAuthors()
+                .SetPackageReleaseNotes()
                 .SetConfiguration(Configuration)
-                .EnableIncludeSymbols()
                 .SetVersion(BuildVersion)
                 .SetOutputDirectory(OutputDirectory));
         });
@@ -83,6 +90,8 @@ class Build : NukeBuild
     Target Push => _ => _
         .DependsOn(Pack)
         .Requires(() => Configuration == Configuration.Release)
+        .Requires(() => ApiKey)
+        .Requires(() => Source)
         .Executes(() =>
         {
             DotNetNuGetPush(s => s
@@ -93,7 +102,7 @@ class Build : NukeBuild
                             .SetTargetPath(v)),
                 degreeOfParallelism: 5,
                 completeOnFailure: true);
-        })
+        });
 
     #region Test case of git diff
 
