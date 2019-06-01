@@ -15,6 +15,7 @@ using static GitPackager.Nuke.Tools.GitPackagerTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Nuke.Common.Tooling;
 using GitPackager.Nuke.Tools;
+using Nuke.Common.BuildServers;
 
 [CheckBuildProjectConfigurations]
 [DotNetVerbosityMapping]
@@ -122,8 +123,19 @@ class Build : NukeBuild
             var gitMirror = RootDirectory / ".gitmirror";
             EnsureCleanDirectory(gitMirror);
 
+            var repository = TeamCity.Instance != null ? TeamCity.Instance.ServerUrl : Repository;
+            if (TeamCity.Instance?.ConfigurationProperties != null)
+            {
+                foreach (var property in TeamCity.Instance?.ConfigurationProperties)
+                {
+                    Logger.Info(property.Key + "=>" + property.Value);
+                }
+            }
+
+            Logger.Info(repository);
+
             // Diff from remote baseline
-            DiffFromBaseline(gitMirror, Repository, "baseline", "origin/test-branch", (changes) =>
+            DiffFromBaseline(gitMirror, repository, "baseline", "origin/test-branch", (changes) =>
             {
                 var added = changes.Added.Select(s=>s.Path);
                 Debug.Assert(added.Contains("test-file.txt"));
