@@ -82,6 +82,8 @@ class Build : NukeBuild
                 .SetDescription(Description)
                 .SetAuthors(Author)
                 .SetPackageReleaseNotes(ReleaseNotes)
+                .SetPackageLicenseUrl("https://licenses.nuget.org/MIT")
+                .SetPackageRequireLicenseAcceptance(false)
                 .SetConfiguration(Configuration)
                 .SetVersion(BuildVersion)
                 .SetOutputDirectory(OutputDirectory));
@@ -98,10 +100,8 @@ class Build : NukeBuild
                     .SetSource(Source)
                     .SetApiKey(ApiKey)
                     .CombineWith(
-                        OutputDirectory.GlobFiles("*.nupkg").NotEmpty(), (cs, v) => cs
-                            .SetTargetPath(v)),
-                degreeOfParallelism: 5,
-                completeOnFailure: true);
+                        OutputDirectory.GlobFiles("*.nupkg").NotEmpty(),
+                        (cs, v) => cs.SetTargetPath(v)), degreeOfParallelism: 5, completeOnFailure: true);
         });
 
     #region Test case of git diff
