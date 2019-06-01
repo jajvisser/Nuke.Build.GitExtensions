@@ -27,8 +27,8 @@ class Build : NukeBuild
     public static int Main() => Execute<Build>(x => x.Compile);
 
     const string Description = "Nuke Build to help filter projects based on a baseline tag, this also supports all setups in teamcity, based on the Cake GitPackager";
-    const string Author = "";
-    const string ReleaseNotes = "";
+    const string Author = "Joris Visser";
+    const string ReleaseNotes = "1.0 - Initial release";
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
@@ -36,7 +36,7 @@ class Build : NukeBuild
     [Solution] readonly Solution Solution;
 
     [Parameter]
-    readonly string BuildVersion = "0.1";
+    readonly string BuildVersion;
 
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath OutputDirectory => RootDirectory / "output";
@@ -79,9 +79,9 @@ class Build : NukeBuild
             DotNetPack(s => s
                 .SetProject(Solution)
                 .EnableNoBuild()
-                .SetDescription()
-                .SetAuthors()
-                .SetPackageReleaseNotes()
+                .SetDescription(Description)
+                .SetAuthors(Author)
+                .SetPackageReleaseNotes(ReleaseNotes)
                 .SetConfiguration(Configuration)
                 .SetVersion(BuildVersion)
                 .SetOutputDirectory(OutputDirectory));
