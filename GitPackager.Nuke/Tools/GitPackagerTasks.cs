@@ -70,7 +70,7 @@ namespace GitPackager.Nuke.Tools
             Logger.Info($"Starting rebuilding repository {repositoryUrl} and branch {currentBranch}");
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);
-            Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch}"");
+            Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch}");
             DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
         }
 
