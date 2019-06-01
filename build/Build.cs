@@ -150,7 +150,7 @@ class Build : NukeBuild
                     Debug.Assert(!added.Contains("test-file.txt"));
                 });
 
-                DiffFromBaseline(RootDirectory, "baseline", "origin/test-branch", (changes) =>
+                DiffFromBaseline(RootDirectory, "baseline", "test-branch", (changes) =>
                 {
                     var added = changes.Added.Select(s => s.Path);
                     added.ForEach(s => Logger.Info(s));
