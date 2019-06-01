@@ -66,17 +66,17 @@ namespace GitPackager.Nuke.Tools
             }
 
             var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
-            var currentBranch = TeamCity.Instance.ConfigurationProperties.FirstOrDefault(s=>s.Key.StartsWith("teamcity_build_vcs_branch"));
-            if (currentBranch.Key == null)
+            var currentBranch = TeamCity.Instance.ConfigurationProperties["teamcity_build_branch"];
+            if (currentBranch == null)
             {
                 throw new NoTeamcityInstanceException($"Configuration property teamcity_build_vcs_branch");
             }
 
-            Logger.Info($"Starting rebuilding repository {repositoryUrl} and branch {currentBranch.Value}");
+            Logger.Info($"Starting rebuilding repository {repositoryUrl} and branch {currentBranch}");
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
             var repository = new Repository(destination);
-            Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch.Value}");
-            DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch.Value);
+            Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch}");
+            DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace GitPackager.Nuke.Tools
 
                 if (branchCommits == null)
                 {
-                    throw new InvalidOperationException($"Branch not found {branchName}, following branches found {string.Join(", ", repository.Branches.Select(s=>s.FriendlyName))}");
+                    throw new InvalidOperationException($"Branch not found {branchName}, following branches found {string.Join(", ", repository.Branches.Select(s => s.FriendlyName))}");
                 }
 
                 var filter = new CommitFilter { ExcludeReachableFrom = baselineCommit, IncludeReachableFrom = branchCommits };
