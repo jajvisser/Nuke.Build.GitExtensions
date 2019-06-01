@@ -2,7 +2,15 @@
 Extra helper functions to help determine which projects have changed from a baseline in GIT
 
 # Installation
-TODO, i'm stil working on publishing 
+GitPackager.Nuke can be installed using the Nuget package manager. 
+
+```
+Install-Package GitPackager.Nuke
+```
+
+# Support
+- .NET Core 2.0 >=
+- .NET Framework 4.6.1 >=
 
 ## Dependency
 Nuke.Build.Common - 0.20
