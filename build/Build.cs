@@ -63,6 +63,7 @@ class Build : NukeBuild
             if (TeamCity.Instance != null)
             {
                 BuildVersion = TeamCity.Instance.BuildNumber;
+                Logger.Info($"{BuildVersion} is used as a buildserver");
             }
 
             DotNetBuild(o => o.SetProjectFile(Solution)
@@ -82,6 +83,7 @@ class Build : NukeBuild
             if (TeamCity.Instance != null)
             {
                 BuildVersion = TeamCity.Instance.BuildNumber;
+                Logger.Info($"{BuildVersion} is used as a buildserver");
             }
 
             DotNetPack(s => s
