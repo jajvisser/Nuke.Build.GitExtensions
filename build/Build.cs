@@ -120,7 +120,7 @@ class Build : NukeBuild
             Logger.Info("Testing baseline with branch test-branch");
             if (TeamCity.Instance != null)
             {
-                EnsureCleanDirectory(RootDirectory);
+                EnsureCleanDirectory(RootDirectory / ".gitmirror");
             }
 
             // Diff from remote baseline
@@ -133,7 +133,7 @@ class Build : NukeBuild
             Logger.Info("Testing baseline with current branch");
             if (TeamCity.Instance != null)
             {
-                EnsureCleanDirectory(RootDirectory);
+                EnsureCleanDirectory(RootDirectory / ".gitmirror");
             }
 
             // Diff from remote baseline
