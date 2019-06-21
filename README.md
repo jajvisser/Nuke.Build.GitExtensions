@@ -40,20 +40,4 @@ DiffFromBaseline(RootDirectory, "baseline", "origin/branch", (changes) =>
 ```
 
 # Integration in Teamcity
-Since buildagents in teamcity don't automatically copy the .git directory, you can use this package to get the  
-First include the static using of the `GitPackager` into your `Build.cs`
-Its basicly the same as the normal as the normal `Integration to build`. 
-
-```
-using static Nuke.Git.Utilities.GitPackager.GitPackager;
-```
-
-Now you need to add a mirror directory where git can clone it's 
-```
-var gitMirror = RootDirectory / ".gitmirror";
-EnsureCleanDirectory(gitMirror);
-DiffFromBaseline(gitMirror, Repository, "baseline", "origin/branch", (changes) =>
-{
-    var added = changes.Added.Select(s=>s.Path);
-}, (url, x, y) => new UsernamePasswordCredentials() { Username = "test", Password = "test" });
-```
+Since buildagents in teamcity don't automatically copy the .git directory, this package automatically creates a copy of the git directory you use an other setting then `Automatically on agent`.

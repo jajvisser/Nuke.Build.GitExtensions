@@ -12,17 +12,50 @@ namespace GitPackager.Nuke.Tools
 {
     public static class GitPackagerTasks
     {
+        private static bool IsTeamCity => TeamCity.Instance != null;
+
         /// <summary>
-        /// With an existing project
-        /// Find what files have changed between the current commit and a baseline tag and return the 
+        /// Find what files have changed between the current commit on the current branch and a baseline tag and return the changes
         /// </summary>
         /// <param name="projectPath">Git repository path.</param>
         /// <param name="baselineName">Baseline name of the base commit to check against</param>
         /// <param name="diffAction">Action that is executed with the changes that are detected</param>
-        public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction)
+        /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
+        public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler = null)
         {
-            DiffFromBaseline(projectPath, baselineName, null, diffAction);
+            if (IsTeamCity)
+            {
+                var newGitProjectPath = projectPath / TeamcityConstants.GitMirror;
+                TeamcityDiffFromBaseline(newGitProjectPath, baselineName, diffAction, credentialsHandler);
+            }
+            else
+            {
+                LocalDiffFromBaseline(projectPath, baselineName, null, diffAction);
+            }
         }
+
+        /// <summary>
+        /// Find what files have changed between the current commit on a specific branch and a baseline tag and return the changes
+        /// </summary>
+        /// <param name="projectPath">Git repository path.</param>
+        /// <param name="baselineName">Baseline name of the base commit to check against</param>
+        /// <param name="branchName">Branch name that is taken as diff</param>
+        /// <param name="diffAction">Action that is executed with the changes that are detected</param>
+        /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
+        public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
+        {
+            if (IsTeamCity)
+            {
+                var newGitProjectPath = projectPath / TeamcityConstants.GitMirror;
+                TeamcityDiffFromBaseline(newGitProjectPath, baselineName, branchName, diffAction, credentialsHandler);
+            }
+            else
+            {
+                LocalDiffFromBaseline(projectPath, baselineName, branchName, diffAction);
+            }
+        }
+
+        #region Local Git Repository
 
         /// <summary>
         /// With an existing project
@@ -32,7 +65,7 @@ namespace GitPackager.Nuke.Tools
         /// <param name="baselineName">Baseline name of the base commit to check against</param>
         /// <param name="branchName">Branch name that is taken as diff</param>
         /// <param name="diffAction">Action that is executed with the changes that are detected</param>
-        public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction)
+        internal static void LocalDiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction)
         {
             if(string.IsNullOrEmpty(projectPath))
             {
@@ -44,22 +77,23 @@ namespace GitPackager.Nuke.Tools
                 throw new ArgumentNullException("baseline needs to be defined to work with");
             }
 
-            // 
+            // Local repository
             var repository = new Repository(projectPath);
-            Logger.Info($"Repository on {projectPath} initialized");
-            DiffFromBaselineInternal(repository, diffAction, baselineName, branchName);
+            var currentBranch = branchName;
+            if (branchName == null)
+            {
+                currentBranch = repository.Head.FriendlyName;
+            }
+
+            Logger.Info($"Repository on {projectPath / ".git"} initialized");
+            DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
         }
 
-        /// <summary>
-        /// Workaround for agents in teamcity, since the .git directory is not copied from teamcity to the agent.
-        /// This function regenerates the .git directory so that see the diff
-        /// Find what files have changed between the current commit and a baseline tag and return the 
-        /// </summary>
-        /// <param name="projectPath">Git repository path.</param>
-        /// <param name="baselineName">Baseline name of the base commit to check against</param>
-        /// <param name="diffAction">Action that is executed with the changes that are detected</param>
-        /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
-        public static void TeamcityDiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
+        #endregion
+
+        #region Teamcity with .gitmirror
+
+        internal static void TeamcityDiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
         {
             if (TeamCity.Instance == null)
             {
@@ -80,17 +114,7 @@ namespace GitPackager.Nuke.Tools
             DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
         }
 
-        /// <summary>
-        /// Workaround for agents in teamcity, since the .git directory is not copied from teamcity to the agent.
-        /// This function regenerates the .git directory so that see the diff
-        /// Find what files have changed between the current commit and a baseline tag and return the 
-        /// </summary>
-        /// <param name="projectPath">Git repository path.</param>
-        /// <param name="baselineName">Baseline name of the base commit to check against</param>
-        /// <param name="branchName">Branch name that is taken as diff</param>
-        /// <param name="diffAction">Action that is executed with the changes that are detected</param>
-        /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
-        public static void TeamcityDiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
+        internal static void TeamcityDiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
         {
             if (TeamCity.Instance == null)
             {
@@ -105,6 +129,10 @@ namespace GitPackager.Nuke.Tools
             Logger.Info($"Finished rebuilding repository {repositoryUrl}");
             DiffFromBaselineInternal(repository, diffAction, baselineName, branchName);
         }
+
+        #endregion
+
+        #region Private methods
 
         /// <summary>
         /// Internal function to run the baseline diff
@@ -134,7 +162,7 @@ namespace GitPackager.Nuke.Tools
                 var allCommits = repository.Commits.QueryBy(filter).ToList();
                 var branchCommitSha = allCommits.First().Sha;
                 var baselineCommitSha = baselineCommit.Sha;
-                Logger.Info($"Processing changes from commit='{baselineCommitSha}' to commit='{branchCommitSha}'");
+                Logger.Info($"Processing changes from commit='{baselineCommitSha}' to commit='{branchCommitSha}' on branch {branchName}");
 
                 if (allCommits.Any())
                 {
@@ -151,7 +179,6 @@ namespace GitPackager.Nuke.Tools
             }
         }
 
-        #region Private methods
         /// <summary>
         /// Build clone options for an empty .git directory with only the used parameter
         /// </summary>

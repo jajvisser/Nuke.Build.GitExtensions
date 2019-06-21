@@ -29,7 +29,7 @@ class Build : NukeBuild
 
     const string Description = "Nuke Build to help filter projects based on a baseline tag. This also clone its own .git directory. Based on the Cake GitPackager";
     const string Author = "Joris Visser";
-    const string ReleaseNotes = "1.0 - Initial release";
+    const string ReleaseNotes = "1.1 - Better teamcity support";
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
@@ -117,46 +117,22 @@ class Build : NukeBuild
         .Requires(() => GitPassword)
         .Executes(() =>
         {
-            if (TeamCity.Instance != null)
+            var gitDirectory = RootDirectory;
+            
+            // Diff from remote baseline
+            DiffFromBaseline(gitDirectory, "baseline", "test-branch", (changes) =>
             {
-                var gitMirror = RootDirectory / ".gitmirror";
-                Logger.Info("Testing baseline with testbranch");
+                var added = changes.Added.Select(s => s.Path);
+                Debug.Assert(added.Contains("test-file.txt"));
+            }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
 
-                EnsureCleanDirectory(gitMirror);
-
-                // Diff from remote baseline
-                TeamcityDiffFromBaseline(gitMirror, "baseline", "test-branch", (changes) =>
-                {
-                    var added = changes.Added.Select(s => s.Path);
-                    Debug.Assert(added.Contains("test-file.txt"));
-                }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
-
-                Logger.Info("Testing baseline with current branch");
-                EnsureCleanDirectory(gitMirror);
-                // Diff from remote baseline
-                TeamcityDiffFromBaseline(gitMirror, "baseline", (changes) =>
-                {
-                    var added = changes.Added.Select(s => s.Path);
-                    Debug.Assert(added.Contains("test-file.txt"));
-                }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
-            }
-            else
+            Logger.Info("Testing baseline with current branch");
+            // Diff from remote baseline
+            DiffFromBaseline(gitDirectory, "baseline", (changes) =>
             {
-                // Diff from local baseline
-                DiffFromBaseline(RootDirectory, "baseline", (changes) =>
-                {
-                    var added = changes.Added.Select(s => s.Path);
-                    added.ForEach(s => Logger.Info(s));
-                    Debug.Assert(!added.Contains("test-file.txt"));
-                });
-
-                DiffFromBaseline(RootDirectory, "baseline", "test-branch", (changes) =>
-                {
-                    var added = changes.Added.Select(s => s.Path);
-                    added.ForEach(s => Logger.Info(s));
-                    Debug.Assert(added.Contains("test-file.txt"));
-                });
-            }
+                var added = changes.Added.Select(s => s.Path);
+                Debug.Assert(added.Contains("test-file.txt"));
+            }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
         });
     #endregion
 }
