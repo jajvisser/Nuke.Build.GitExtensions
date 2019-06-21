@@ -29,14 +29,14 @@ class Build : NukeBuild
 
     const string Description = "Nuke Build to help filter projects based on a baseline tag. This also clone its own .git directory. Based on the Cake GitPackager.";
     const string Author = "Joris Visser";
-    const string ReleaseNotes = "1.1 - Better teamcity support";
+    const string ReleaseNotes = "Easier teamcity support";
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution] readonly Solution Solution;
 
-    [Parameter] readonly string BuildVersion;
+    [Parameter] string BuildVersion;
 
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath OutputDirectory => RootDirectory / "output";
@@ -60,6 +60,11 @@ class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
+            if (TeamCity.Instance != null)
+            {
+                BuildVersion = TeamCity.Instance.BuildNumber;
+            }
+
             DotNetBuild(o => o.SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .SetAssemblyVersion(BuildVersion)
@@ -74,12 +79,17 @@ class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
+            if (TeamCity.Instance != null)
+            {
+                BuildVersion = TeamCity.Instance.BuildNumber;
+            }
+
             DotNetPack(s => s
                 .SetProject(Solution)
                 .EnableNoBuild()
                 .SetDescription(Description)
                 .SetAuthors(Author)
-                .SetPackageReleaseNotes(ReleaseNotes)
+                .SetPackageReleaseNotes(BuildVersion + " - " + ReleaseNotes)
                 .SetPackageLicenseUrl("https://licenses.nuget.org/MIT")
                 .SetPackageRequireLicenseAcceptance(false)
                 .SetConfiguration(Configuration)
