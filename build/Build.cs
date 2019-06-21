@@ -27,7 +27,7 @@ class Build : NukeBuild
 
     public static int Main() => Execute<Build>(x => x.Compile);
 
-    const string Description = "Nuke Build to help filter projects based on a baseline tag. This also clone its own .git directory. Based on the Cake GitPackager";
+    const string Description = "Nuke Build to help filter projects based on a baseline tag. This also clone its own .git directory. Based on the Cake GitPackager.";
     const string Author = "Joris Visser";
     const string ReleaseNotes = "1.1 - Better teamcity support";
 
@@ -117,18 +117,27 @@ class Build : NukeBuild
         .Requires(() => GitPassword)
         .Executes(() =>
         {
-            var gitDirectory = RootDirectory;
-            
+            Logger.Info("Testing baseline with branch test-branch");
+            if (TeamCity.Instance != null)
+            {
+                EnsureCleanDirectory(RootDirectory);
+            }
+
             // Diff from remote baseline
-            DiffFromBaseline(gitDirectory, "baseline", "test-branch", (changes) =>
+            DiffFromBaseline(RootDirectory, "baseline", "test-branch", (changes) =>
             {
                 var added = changes.Added.Select(s => s.Path);
                 Debug.Assert(added.Contains("test-file.txt"));
             }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
 
             Logger.Info("Testing baseline with current branch");
+            if (TeamCity.Instance != null)
+            {
+                EnsureCleanDirectory(RootDirectory);
+            }
+
             // Diff from remote baseline
-            DiffFromBaseline(gitDirectory, "baseline", (changes) =>
+            DiffFromBaseline(RootDirectory, "baseline", (changes) =>
             {
                 var added = changes.Added.Select(s => s.Path);
                 Debug.Assert(added.Contains("test-file.txt"));
