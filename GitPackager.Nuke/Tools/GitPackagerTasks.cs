@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using GitPackager.Nuke.Tools.Constants;
 using GitPackager.Nuke.Tools.Exceptions;
 using LibGit2Sharp;
 using LibGit2Sharp.Handlers;
@@ -65,8 +66,8 @@ namespace GitPackager.Nuke.Tools
                 throw new NoTeamcityInstanceException("No teamcity instance detected");
             }
 
-            var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
-            var currentBranch = TeamCity.Instance.ConfigurationProperties["teamcity_build_branch"];
+            var repositoryUrl = TeamCity.Instance.ConfigurationProperties[TeamcityConstants.VcsRootUrl];
+            var currentBranch = TeamCity.Instance.ConfigurationProperties[TeamcityConstants.VcsBranch];
             if (currentBranch == null)
             {
                 throw new NoTeamcityInstanceException($"Configuration property teamcity_build_vcs_branch");
@@ -96,7 +97,7 @@ namespace GitPackager.Nuke.Tools
                 throw new NoTeamcityInstanceException("No teamcity instance detected");
             }
 
-            var repositoryUrl = TeamCity.Instance.ConfigurationProperties["vcsroot_url"];
+            var repositoryUrl = TeamCity.Instance.ConfigurationProperties[TeamcityConstants.VcsRootUrl];
 
             Logger.Info($"Starting rebuilding repository {repositoryUrl}");
             var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));

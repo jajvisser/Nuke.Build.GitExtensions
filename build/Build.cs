@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Linq;
-using GitPackager.Nuke.Tools;
 using LibGit2Sharp;
-using Microsoft.Build.Tasks;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.ProjectModel;
@@ -14,7 +12,6 @@ using static Nuke.Common.IO.PathConstruction;
 using static GitPackager.Nuke.Tools.GitPackagerTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Nuke.Common.Tooling;
-using GitPackager.Nuke.Tools;
 using Nuke.Common.BuildServers;
 
 [CheckBuildProjectConfigurations]
@@ -120,11 +117,13 @@ class Build : NukeBuild
         .Requires(() => GitPassword)
         .Executes(() =>
         {
-            var gitMirror = RootDirectory / ".gitmirror";
-
             if (TeamCity.Instance != null)
-            { 
+            {
+                var gitMirror = RootDirectory / ".gitmirror";
+                Logger.Info("Testing baseline with testbranch");
+
                 EnsureCleanDirectory(gitMirror);
+
                 // Diff from remote baseline
                 TeamcityDiffFromBaseline(gitMirror, "baseline", "test-branch", (changes) =>
                 {
@@ -132,6 +131,7 @@ class Build : NukeBuild
                     Debug.Assert(added.Contains("test-file.txt"));
                 }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
 
+                Logger.Info("Testing baseline with current branch");
                 EnsureCleanDirectory(gitMirror);
                 // Diff from remote baseline
                 TeamcityDiffFromBaseline(gitMirror, "baseline", (changes) =>
