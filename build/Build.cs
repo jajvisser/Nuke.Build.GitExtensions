@@ -106,11 +106,17 @@ class Build : NukeBuild
         .Requires(() => Source)
         .Executes(() =>
         {
+            if (TeamCity.Instance != null)
+            {
+                BuildVersion = TeamCity.Instance.BuildNumber;
+                Logger.Info($"{BuildVersion} is used as a buildserver");
+            }
+
             DotNetNuGetPush(s => s
                     .SetSource(Source)
                     .SetApiKey(ApiKey)
                     .CombineWith(
-                        OutputDirectory.GlobFiles("*.nupkg").NotEmpty(),
+                        OutputDirectory.GlobFiles( $"*{BuildVersion}.nupkg").NotEmpty(),
                         (cs, v) => cs.SetTargetPath(v)), degreeOfParallelism: 5, completeOnFailure: true);
         });
 
