@@ -1,4 +1,5 @@
-﻿using LibGit2Sharp;
+﻿using GitPackager.Nuke.Tools.Constants;
+using LibGit2Sharp;
 using LibGit2Sharp.Handlers;
 using Nuke.Common.IO;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -9,7 +10,7 @@ namespace GitPackager.Nuke.GitWrapper
     {
         public static Repository GetRepository(string repositoryUrl, PathConstruction.AbsolutePath projectPath, CredentialsHandler credentialsHandler)
         {
-            if (DirectoryExists(projectPath / ".git"))
+            if (DirectoryExists(projectPath / GitConstants.GitDirectory))
             {
                 return new Repository(projectPath);
             }

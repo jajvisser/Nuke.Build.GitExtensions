@@ -135,6 +135,8 @@ class Build : NukeBuild
         });
 
     Target Tag => _ => _
+        .Requires(() => GitUsername)
+        .Requires(() => GitPassword)
         .Executes(() =>
         {
             var tempTag = Guid.NewGuid().ToString();
