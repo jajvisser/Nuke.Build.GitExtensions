@@ -1,5 +1,8 @@
+using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using LibGit2Sharp;
 using Nuke.Common;
 using Nuke.Common.Execution;
@@ -10,6 +13,7 @@ using Configuration = Nuke.Common.Configuration;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static GitPackager.Nuke.Tools.GitPackagerTasks;
+using static GitPackager.Nuke.Tools.GitTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Nuke.Common.Tooling;
 using Nuke.Common.BuildServers;
@@ -19,27 +23,26 @@ using Nuke.Common.BuildServers;
 [UnsetVisualStudioEnvironmentVariables]
 class Build : NukeBuild
 {
-    /// Support plugins are available for:
-    ///   - JetBrains ReSharper        https://nuke.build/resharper
-    ///   - JetBrains Rider            https://nuke.build/rider
-    ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
-    ///   - Microsoft VSCode           https://nuke.build/vscode
-
+    // Default build action
     public static int Main() => Execute<Build>(x => x.Compile);
 
+    // Description fields
     const string Description = "Nuke Build to help filter projects based on a baseline tag. This also clone its own .git directory. Based on the Cake GitPackager.";
     const string Author = "Joris Visser";
-    const string ReleaseNotes = "Easier teamcity support";
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution] readonly Solution Solution;
-
     [Parameter] string BuildVersion;
+
+    [Parameter] readonly string Source = "https://api.nuget.org/v3/index.json";
+    [Parameter] readonly string ApiKey;
 
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath OutputDirectory => RootDirectory / "output";
+
+    #region Default build tasks
 
     Target Clean => _ => _
         .Before(Restore)
@@ -72,10 +75,7 @@ class Build : NukeBuild
                 .SetFileVersion(BuildVersion)
                 .SetInformationalVersion(BuildVersion));
         });
-
-    [Parameter] readonly string Source = "https://api.nuget.org/v3/index.json";
-    [Parameter] readonly string ApiKey;
-
+    
     Target Pack => _ => _
         .DependsOn(Compile)
         .Executes(() =>
@@ -91,13 +91,27 @@ class Build : NukeBuild
                 .EnableNoBuild()
                 .SetDescription(Description)
                 .SetAuthors(Author)
-                .SetPackageReleaseNotes(BuildVersion + " - " + ReleaseNotes)
+                .SetPackageReleaseNotes(GetReleaseNotes())
                 .SetPackageLicenseUrl("https://licenses.nuget.org/MIT")
                 .SetPackageRequireLicenseAcceptance(false)
                 .SetConfiguration(Configuration)
                 .SetVersion(BuildVersion)
                 .SetOutputDirectory(OutputDirectory));
         });
+
+    static string GetReleaseNotes()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = "ReleaseNotes.txt";
+
+        var notes = assembly.GetManifestResourceNames();
+        
+        using (var stream = assembly.GetManifestResourceStream(resourceName))
+        using (var reader = new StreamReader(stream))
+        {
+            return reader.ReadToEnd();
+        }
+    }
 
     Target Push => _ => _
         .DependsOn(Pack)
@@ -119,6 +133,20 @@ class Build : NukeBuild
                         OutputDirectory.GlobFiles( $"*{BuildVersion}.nupkg").NotEmpty(),
                         (cs, v) => cs.SetTargetPath(v)), degreeOfParallelism: 5, completeOnFailure: true);
         });
+
+    Target Tag => _ => _
+        .Executes(() =>
+        {
+            var tempTag = Guid.NewGuid().ToString();
+
+            // Create tag
+            CreateTag(tempTag, RootDirectory, Repository, (url, fromUrl, types) => new UsernamePasswordCredentials { Password = GitPassword, Username = GitUsername});
+
+            // Delete tag
+            DeleteTag(tempTag, RootDirectory, Repository, (url, fromUrl, types) => new UsernamePasswordCredentials { Password = GitPassword, Username = GitUsername });
+        });
+
+#endregion
 
     #region Test case of git diff
 
