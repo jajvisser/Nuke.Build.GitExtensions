@@ -18,7 +18,7 @@ namespace GitPackager.Nuke.Tools
 
         private static bool HasGitDirectory(PathConstruction.AbsolutePath projectPath)
         {
-            return DirectoryExists(projectPath / ".git");
+            return DirectoryExists(projectPath / GitConstants.GitDirectory);
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace GitPackager.Nuke.Tools
                 currentBranch = repository.Head.FriendlyName;
             }
 
-            Logger.Info($"Repository on {projectPath / ".git"} initialized");
+            Logger.Info($"Repository on {projectPath / GitConstants.GitDirectory} initialized");
             DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
         }
 

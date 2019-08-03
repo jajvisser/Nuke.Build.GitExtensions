@@ -1,3 +1,4 @@
-﻿1.1.1 - Support all checkout variants in teamcity
+﻿1.2.0 - Added extra GIT commands
+1.1.1 - Support all checkout variants in teamcity
 1.1.0 - Simplified teamcity support
 1.0.0 - Initial release

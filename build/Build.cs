@@ -159,7 +159,7 @@ class Build : NukeBuild
     [Parameter]
     readonly string GitPassword;
 
-    Target TestGit => _ => _
+    Target TestGitBaseline => _ => _
         .Requires(() => Repository)
         .Requires(() => GitUsername)
         .Requires(() => GitPassword)
@@ -191,5 +191,30 @@ class Build : NukeBuild
                 Debug.Assert(added.Contains("test-file.txt"));
             }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
         });
+
+    Target TestGitTasks => _ => _
+        .DependsOn(TestGitBaseline)
+        .Requires(() => Repository)
+        .Requires(() => GitUsername)
+        .Requires(() => GitPassword)
+        .Executes(() =>
+        {
+            // Reset test scenario
+            DeleteTag("test-tag", RootDirectory, Repository, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
+
+            // Create tag
+            CreateTag("test-tag", RootDirectory, Repository, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
+
+            // Delete tag
+            DeleteTag("test-tag", RootDirectory, Repository, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
+
+            // RecreateTag
+            ResetTag("test-tag", RootDirectory, Repository, (url, x, y) => new UsernamePasswordCredentials() { Username = GitUsername, Password = GitPassword });
+        });
+
+    Target TestGit => _ => _
+        .DependsOn(TestGitTasks)
+        .Executes(() => { });
+
     #endregion
 }
