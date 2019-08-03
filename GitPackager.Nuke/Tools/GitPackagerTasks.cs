@@ -18,7 +18,8 @@ namespace GitPackager.Nuke.Tools
 
         private static bool HasGitDirectory(PathConstruction.AbsolutePath projectPath)
         {
-            return DirectoryExists(projectPath / GitConstants.GitDirectory);
+            // .git and .git/index file exists
+            return FileExists(projectPath / GitConstants.GitDirectory / GitConstants.IndexFile);
         }
 
         /// <summary>
