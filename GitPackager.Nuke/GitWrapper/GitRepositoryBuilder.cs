@@ -10,7 +10,7 @@ namespace GitPackager.Nuke.GitWrapper
     {
         public static Repository GetRepository(string repositoryUrl, PathConstruction.AbsolutePath projectPath, CredentialsHandler credentialsHandler)
         {
-            if (DirectoryExists(projectPath / GitConstants.GitDirectory))
+            if (FileExists(projectPath / GitConstants.GitDirectory / GitConstants.IndexFile))
             {
                 return new Repository(projectPath);
             }
