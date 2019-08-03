@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using GitPackager.Nuke.GitWrapper;
 using GitPackager.Nuke.Tools.Constants;
 using GitPackager.Nuke.Tools.Exceptions;
 using LibGit2Sharp;
@@ -7,12 +8,18 @@ using LibGit2Sharp.Handlers;
 using Nuke.Common;
 using Nuke.Common.BuildServers;
 using Nuke.Common.IO;
+using static Nuke.Common.IO.FileSystemTasks;
 
 namespace GitPackager.Nuke.Tools
 {
     public static class GitPackagerTasks
     {
-        private static bool IsTeamCity => TeamCity.Instance != null;
+        private static PathConstruction.AbsolutePath RootDirectory => (PathConstruction.AbsolutePath)EnvironmentInfo.WorkingDirectory;
+
+        private static bool HasGitDirectory(PathConstruction.AbsolutePath projectPath)
+        {
+            return DirectoryExists(projectPath / GitConstants.GitDirectory);
+        }
 
         /// <summary>
         /// Find what files have changed between the current commit on the current branch and a baseline tag and return the changes
@@ -23,14 +30,14 @@ namespace GitPackager.Nuke.Tools
         /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
         public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler = null)
         {
-            if (IsTeamCity)
+            if (HasGitDirectory(projectPath))
             {
-                var newGitProjectPath = projectPath / TeamcityConstants.GitMirror;
-                TeamcityDiffFromBaseline(newGitProjectPath, baselineName, diffAction, credentialsHandler);
+                LocalDiffFromBaseline(projectPath, baselineName, null, diffAction);
             }
             else
             {
-                LocalDiffFromBaseline(projectPath, baselineName, null, diffAction);
+                var newGitProjectPath = projectPath / GitConstants.GitMirrorDirectory;
+                TeamcityDiffFromBaseline(newGitProjectPath, baselineName, diffAction, credentialsHandler);
             }
         }
 
@@ -44,14 +51,14 @@ namespace GitPackager.Nuke.Tools
         /// <param name="credentialsHandler">LibGit2Sharp credential handler</param>
         public static void DiffFromBaseline(PathConstruction.AbsolutePath projectPath, string baselineName, string branchName, Action<TreeChanges> diffAction, CredentialsHandler credentialsHandler)
         {
-            if (IsTeamCity)
+            if (HasGitDirectory(projectPath))
             {
-                var newGitProjectPath = projectPath / TeamcityConstants.GitMirror;
-                TeamcityDiffFromBaseline(newGitProjectPath, baselineName, branchName, diffAction, credentialsHandler);
+                LocalDiffFromBaseline(projectPath, baselineName, branchName, diffAction);
             }
             else
             {
-                LocalDiffFromBaseline(projectPath, baselineName, branchName, diffAction);
+                var newGitProjectPath = projectPath / GitConstants.GitMirrorDirectory;
+                TeamcityDiffFromBaseline(newGitProjectPath, baselineName, branchName, diffAction, credentialsHandler);
             }
         }
 
@@ -85,7 +92,7 @@ namespace GitPackager.Nuke.Tools
                 currentBranch = repository.Head.FriendlyName;
             }
 
-            Logger.Info($"Repository on {projectPath / ".git"} initialized");
+            Logger.Info($"Repository on {projectPath / GitConstants.GitDirectory} initialized");
             DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
         }
 
@@ -108,9 +115,9 @@ namespace GitPackager.Nuke.Tools
             }
 
             Logger.Info($"Starting rebuilding repository {repositoryUrl} and branch {currentBranch}");
-            var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
-            var repository = new Repository(destination);
+            var repository = GitRepositoryBuilder.CloneTempRepository(repositoryUrl, projectPath, credentialsHandler);
             Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch}");
+
             DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
         }
 
@@ -124,9 +131,9 @@ namespace GitPackager.Nuke.Tools
             var repositoryUrl = TeamCity.Instance.ConfigurationProperties[TeamcityConstants.VcsRootUrl];
 
             Logger.Info($"Starting rebuilding repository {repositoryUrl}");
-            var destination = Repository.Clone(repositoryUrl, projectPath, GetCloneOptions(credentialsHandler));
-            var repository = new Repository(destination);
+            var repository = GitRepositoryBuilder.CloneTempRepository(repositoryUrl, projectPath, credentialsHandler);
             Logger.Info($"Finished rebuilding repository {repositoryUrl}");
+
             DiffFromBaselineInternal(repository, diffAction, baselineName, branchName);
         }
 
@@ -145,8 +152,8 @@ namespace GitPackager.Nuke.Tools
         {
             using (repository)
             {
-                var baselineCommit = FindBaseline(repository, baselineName);
-                var branchCommits = FindBranchCommit(repository, branchName);
+                var baselineCommit = repository.FindBaseline(baselineName);
+                var branchCommits = repository.FindBranchCommit(branchName);
 
                 if (baselineCommit == null)
                 {
@@ -177,38 +184,6 @@ namespace GitPackager.Nuke.Tools
                     Logger.Info("No commits found on repository");
                 }
             }
-        }
-
-        /// <summary>
-        /// Build clone options for an empty .git directory with only the used parameter
-        /// </summary>
-        /// <param name="credentialsHandler"></param>
-        /// <returns></returns>
-        private static CloneOptions GetCloneOptions(CredentialsHandler credentialsHandler)
-        {
-            return new CloneOptions
-            {
-                IsBare = true,
-                CredentialsProvider = credentialsHandler
-            };
-        }
-
-        private static GitObject FindBaseline(Repository gitRepo, string baselineName)
-        {
-            var tag = gitRepo.Tags[baselineName];
-            return tag?.Target;
-        }
-
-        private static ICommitLog FindBranchCommit(Repository repository, string branchName = null)
-        {
-            if(string.IsNullOrEmpty(branchName))
-            {
-                return repository.Commits;
-            }
-
-            // Find latest commits
-            var branch = repository.Branches.FirstOrDefault(s => s.FriendlyName.EndsWith(branchName, StringComparison.OrdinalIgnoreCase));
-            return branch?.Commits;
         }
 
         #endregion
