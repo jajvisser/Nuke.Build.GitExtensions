@@ -167,10 +167,6 @@ class Build : NukeBuild
         .Executes(() =>
         {
             Logger.Info("Testing baseline with branch test-branch");
-            if (TeamCity.Instance != null)
-            {
-                EnsureCleanDirectory(RootDirectory / GitConstants.GitDirectory);
-            }
 
             // Diff from remote baseline
             DiffFromBaseline(RootDirectory, "baseline", "test-branch", (changes) =>
@@ -180,10 +176,6 @@ class Build : NukeBuild
             }, (url, x, y) => new UsernamePasswordCredentials() {Username = GitUsername, Password = GitPassword});
 
             Logger.Info("Testing baseline with current branch");
-            if (TeamCity.Instance != null)
-            {
-                EnsureCleanDirectory(RootDirectory / GitConstants.GitDirectory);
-            }
 
             // Diff from remote baseline
             DiffFromBaseline(RootDirectory, "baseline", (changes) =>

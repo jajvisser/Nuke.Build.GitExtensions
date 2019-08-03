@@ -20,6 +20,7 @@ namespace GitPackager.Nuke.GitWrapper
 
         private static Repository CloneTempRepository(string repositoryUrl, PathConstruction.AbsolutePath projectPath, CredentialsHandler credentialsHandler)
         {
+            DeleteDirectory(projectPath / GitConstants.GitDirectory);
             var destination = Repository.Clone(repositoryUrl, projectPath / GitConstants.GitDirectory, GetCloneOptions(credentialsHandler));
             return new Repository(destination);
         }
