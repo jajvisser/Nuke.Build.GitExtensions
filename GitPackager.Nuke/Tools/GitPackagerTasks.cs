@@ -36,8 +36,7 @@ namespace GitPackager.Nuke.Tools
             }
             else
             {
-                var newGitProjectPath = projectPath / GitConstants.GitMirrorDirectory;
-                TeamcityDiffFromBaseline(newGitProjectPath, baselineName, diffAction, credentialsHandler);
+                TeamcityDiffFromBaseline(projectPath, baselineName, diffAction, credentialsHandler);
             }
         }
 
@@ -57,8 +56,7 @@ namespace GitPackager.Nuke.Tools
             }
             else
             {
-                var newGitProjectPath = projectPath / GitConstants.GitMirrorDirectory;
-                TeamcityDiffFromBaseline(newGitProjectPath, baselineName, branchName, diffAction, credentialsHandler);
+                TeamcityDiffFromBaseline(projectPath, baselineName, branchName, diffAction, credentialsHandler);
             }
         }
 
@@ -115,7 +113,7 @@ namespace GitPackager.Nuke.Tools
             }
 
             Logger.Info($"Starting rebuilding repository {repositoryUrl} and branch {currentBranch}");
-            var repository = GitRepositoryBuilder.CloneTempRepository(repositoryUrl, projectPath, credentialsHandler);
+            var repository = GitRepositoryBuilder.GetRepository(repositoryUrl, projectPath, credentialsHandler);
             Logger.Info($"Finished rebuilding repository {repositoryUrl} and branch {currentBranch}");
 
             DiffFromBaselineInternal(repository, diffAction, baselineName, currentBranch);
@@ -131,7 +129,7 @@ namespace GitPackager.Nuke.Tools
             var repositoryUrl = TeamCity.Instance.ConfigurationProperties[TeamcityConstants.VcsRootUrl];
 
             Logger.Info($"Starting rebuilding repository {repositoryUrl}");
-            var repository = GitRepositoryBuilder.CloneTempRepository(repositoryUrl, projectPath, credentialsHandler);
+            var repository = GitRepositoryBuilder.GetRepository(repositoryUrl, projectPath, credentialsHandler);
             Logger.Info($"Finished rebuilding repository {repositoryUrl}");
 
             DiffFromBaselineInternal(repository, diffAction, baselineName, branchName);

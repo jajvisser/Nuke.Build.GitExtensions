@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using GitPackager.Nuke.Tools.Constants;
 using LibGit2Sharp;
 using Nuke.Common;
 using Nuke.Common.Execution;
@@ -168,7 +169,7 @@ class Build : NukeBuild
             Logger.Info("Testing baseline with branch test-branch");
             if (TeamCity.Instance != null)
             {
-                EnsureCleanDirectory(RootDirectory / ".gitmirror");
+                EnsureCleanDirectory(RootDirectory / GitConstants.GitDirectory);
             }
 
             // Diff from remote baseline
@@ -181,7 +182,7 @@ class Build : NukeBuild
             Logger.Info("Testing baseline with current branch");
             if (TeamCity.Instance != null)
             {
-                EnsureCleanDirectory(RootDirectory / ".gitmirror");
+                EnsureCleanDirectory(RootDirectory / GitConstants.GitDirectory);
             }
 
             // Diff from remote baseline
